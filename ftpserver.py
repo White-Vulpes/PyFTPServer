@@ -25,12 +25,9 @@ def download(conn, file):
         conn.send(str.encode("File does on exists"))
 
 def upload(conn, file):
-    if os.path.isfile(getdir() + "/" + file):
-        f = open(file, "wb")
-        data = conn.recv(1024)
-        f.write(data)
-    else:
-        conn.send(str.encode("File does on exists"))
+    f = open(file, "wb")
+    data = conn.recv(1024)
+    f.write(data)
 
 def changedir(conn, com):
     if(com == ".."):
@@ -42,7 +39,7 @@ def changedir(conn, com):
         if os.path.isdir(getdir() + "/" + com):
             currdir.append(com)
         else:
-            conn.send(str.encode("File does on exists"))
+            conn.send(str.encode("File does on exists\n"))
 
 def getdir():
     path = ""
