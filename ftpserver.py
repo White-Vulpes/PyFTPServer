@@ -18,16 +18,23 @@ tcount = 0
 
 def download(conn, file):
     if os.path.isfile(getdir() + "/" + file):
+        fsize = os.path.getsize(getdir() + "/" + file)
+        itera = (int)((fsize / 1024) + 1)
         f = open(file,"rb")
-        conn.send(f.read())
+        for x in range(itera):
+           conn.send(f.read(1024))
         conn.send(str.encode("\n"))
     else:
         conn.send(str.encode("File does on exists"))
 
 def upload(conn, file):
     f = open(file, "wb")
-    data = conn.recv(1024)
-    f.write(data)
+    fsize = conn.recv(1024).decode('utf-8')
+    fsize = int(fsize)
+    itera = (int)((fsize / 1024) + 1)
+    for x in range(itera):
+        data = conn.recv(1024)
+        f.write(data)
 
 def changedir(conn, com):
     if(com == ".."):
