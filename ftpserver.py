@@ -91,6 +91,9 @@ def client(conn):
                     conn.send(str.encode(x + "\n"))
             else:
                 commands(conn, comm)
+    else:
+        conn.send(str.encode("Wrong Password"));
+        conn.close();
 
 
 while True:
