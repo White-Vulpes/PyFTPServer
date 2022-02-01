@@ -16,25 +16,40 @@ currdir.append(".")
 t = []
 tcount = 0
 
+def getdir():
+    path = ""
+    for p in currdir:
+        path += p
+        path += "/"
+    return path
+
 def download(conn, file):
-    if os.path.isfile(getdir() + "/" + file):
-        fsize = os.path.getsize(getdir() + "/" + file)
-        itera = (int)((fsize / 1024) + 1)
-        f = open(file,"rb")
-        for x in range(itera):
-           conn.send(f.read(1024))
-        conn.send(str.encode("\n"))
-    else:
-        conn.send(str.encode("File does on exists"))
+    if(os.path.isfile(file)):
+        f = open(file, "rb")
+        b = f.read()
+        conn.send(b)
+
+def getList(conn):
+
+    files = os.listdir(getdir())
+    name = ""
+    for f in files:
+        name += f
+        name += ","
+        name += str(os.path.getsize(f))
+        name += ","
+    conn.send(str.encode(name))
 
 def upload(conn, file):
+    data = bytearray(b"")
+    print("Uploading File")
     f = open(file, "wb")
     fsize = conn.recv(1024).decode('utf-8')
     fsize = int(fsize)
-    itera = (int)((fsize / 1024) + 1)
-    for x in range(itera):
-        data = conn.recv(1024)
+    while(f.tell() != fsize):
+        data = conn.recv(1048576)
         f.write(data)
+    print("Uploading File Done")
 
 def changedir(conn, com):
     if(com == ".."):
@@ -48,13 +63,6 @@ def changedir(conn, com):
         else:
             conn.send(str.encode("File does on exists\n"))
 
-def getdir():
-    path = ""
-    for p in currdir:
-        path += p
-        path += "/"
-    return path
-
 def commands(conn, comm):
     
     key = comm.split(' ')
@@ -66,34 +74,41 @@ def commands(conn, comm):
         upload(conn, key[1])
     elif(key[0] == "cd"):
         changedir(conn, key[1])
+    elif(key[0] == "getList"):
+        getList(conn)
     else:
         conn.send(str.encode("Invalid Command\n"))
 
 def client(conn):
 
-    conn.send(str.encode("\n\n\t\t\tVulpes FTP Server\n\t\tEnter Username : "))
-    username = conn.recv(1024).decode("utf-8")
-    conn.send(str.encode("\n\t\tEnter Password : "))
-    passw = conn.recv(1024).decode("utf-8")
-    print(username + "   " + passw)
-    if username[:-2] == user and passw[:-2] == password:
-        conn.send(str.encode("\n\nType help to see the list of commands\n"))
-        while True:
-            for path in currdir:
-                conn.send(str.encode(path + ">"))
-            c = conn.recv(1024).decode('utf-8')
-            comm = c[:-2]
-            if(comm == "help"):
-                conn.send(str.encode("help\t\tTo see list of commands\nls\t\tReturns the list of files present in current directory\ncreate <foldername>\t\tTo create a Folder\ncd <DirectoryName>\t\tTo go to an existing directory\ncd ..\t\tTo go to back a directory\ndown <filename>\t\tTo Download the particular file\nupl <filename>\t\tTo upload a file\n\n"))
-            elif(comm == "ls"):
-                ls = os.listdir(getdir())
-                for x in ls:
-                    conn.send(str.encode(x + "\n"))
-            else:
-                commands(conn, comm)
-    else:
-        conn.send(str.encode("Wrong Password"));
-        conn.close();
+    try:
+        conn.send(str.encode("\n\n\t\t\tVulpes FTP Server\n\t\tEnter Username : "))
+        username = conn.recv(1024).decode("utf-8")
+        conn.send(str.encode("\n\t\tEnter Password : "))
+        passw = conn.recv(1024).decode("utf-8")
+        print(username + "   " + passw)
+        if username == user and passw == password:
+            conn.send(str.encode("\n\nType help to see the list of commands\n"))
+            while True:
+                for path in currdir:
+                    conn.send(str.encode(path + ">"))
+                c = conn.recv(1024).decode('utf-8')
+                print(c)
+                comm = c
+                if(comm == "help"):
+                    conn.send(str.encode("help\t\tTo see list of commands\nls\t\tReturns the list of files present in current directory\ncreate <foldername>\t\tTo create a Folder\ncd <DirectoryName>\t\tTo go to an existing directory\ncd ..\t\tTo go to back a directory\ndown <filename>\t\tTo Download the particular file\nupl <filename>\t\tTo upload a file\n\n"))
+                elif(comm == "ls"):
+                    ls = os.listdir(getdir())
+                    for x in ls:
+                        conn.send(str.encode(x + "\n"))
+                else:
+                    commands(conn, comm)
+        else:
+            print("Wrong Answer")
+            conn.send(str.encode("Wrong Password\n"))
+            conn.close()
+    except UnicodeDecodeError:
+        print("Ignoring")
 
 
 while True:
@@ -108,6 +123,6 @@ while True:
         print("No. of Thread created : " + str(tcount))
     except KeyboardInterrupt:
         s.close()
-        shutdown = False
-        print("KeyBoard Interrupt Killing Threads....")
+        print("  KeyBoard Interrupt Killing Threads....")
         sys.exit()
+        
